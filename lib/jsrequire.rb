@@ -3,14 +3,16 @@ class JsRequire
 
   class FileNotFoundInLoadpath < ArgumentError; end
 
+  attr_reader :cache
 
-  def initialize(loadpaths = nil)
+  def initialize(loadpaths = nil, cache = nil)
     @extract_loadpaths = []
 
     loadpaths = [loadpaths] unless loadpaths.is_a?(Array)
     @additional_loadpaths = JsRequire::normalize_filepaths(loadpaths.compact)
 
     @preprocessors = Hash.new { |h,k| h[k] = [] }
+    @cache = cache
 
     on("css", &method(:collect_css))
   end
@@ -183,24 +185,28 @@ class JsRequire
 
   def extract_dependencies(filename)
     is_require = true
-    js = []
+    # dependencies = cache.fetch(["JsRequire", filename, File.mtime(filename).iso8601].join("/")) do
+      js = []
 
-    File.open(filename, "r") do |fp|
-      fp.each_line do |line|
-        if val = parse_line(line)
-          # fire callbacks
-          action, parameter = exec_preprocessor(val[0], val[1])
+      File.open(filename, "r") do |fp|
+        fp.each_line do |line|
+          if val = parse_line(line)
+            # fire callbacks
+            action, parameter = exec_preprocessor(val[0], val[1])
 
-          case action
-          when "js" then js << parameter
+            case action
+            when "js" then js << parameter
+            end
+          else
+            break
           end
-        else
-          break
         end
       end
-    end
 
-    js.uniq.map { |f| find_file(f, File.dirname(filename)) }
+      dependencies = js
+    # end
+
+    dependencies.uniq.map { |f| find_file(f, File.dirname(filename)) }
   end
 
   def parse_line(line)
