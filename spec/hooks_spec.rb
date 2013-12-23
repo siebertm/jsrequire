@@ -1,8 +1,8 @@
-require 'helper.rb'
+require "spec_helper"
 
-class TestHooks < Test::Unit::TestCase
+describe "JsRequire hooks" do
 
-  def setup
+  before do
     @fixtures_dir = File.join(File.dirname(__FILE__), "fixtures")
   end
 
@@ -15,14 +15,13 @@ class TestHooks < Test::Unit::TestCase
   end
 
 
-  context "hooks" do
-
-    should "register hook successfully" do
+  describe "JsRequire#on" do
+    it "registers a hook successfully" do
       @jsrequire = JsRequire.new
       @jsrequire.on { |action, parameter| }
     end
 
-    should "execute general hook" do
+    it "executes the hook" do
       called = false
 
       require("hook.js") do
@@ -36,7 +35,7 @@ class TestHooks < Test::Unit::TestCase
       assert called, "Callback was not called"
     end
 
-    should "execute specific hook" do
+    it "executes specific hook" do
       called = false
       require("hook.js") do
         @jsrequire.on("view") do |action, parameter|
@@ -49,7 +48,7 @@ class TestHooks < Test::Unit::TestCase
       assert called, "Callback was not called"
     end
 
-    should "call specific hook before general" do
+    it "call specific hook before general" do
       specific_called = false
       general_called = false
 
@@ -67,7 +66,7 @@ class TestHooks < Test::Unit::TestCase
       assert general_called && specific_called, "Callbacks were not called"
     end
 
-    should "rewrite line to js-action" do
+    it "rewrite line to js-action" do
       called = false
       deps = require("hook.js") do
         @jsrequire.on("view") do |action, params|
@@ -81,7 +80,7 @@ class TestHooks < Test::Unit::TestCase
       assert_match /norequire\.js$/, deps[:javascripts].first
     end
 
-    should "skip required view because hook drops it" do
+    it "skip required view because hook drops it" do
       called = false
       deps = require("hook.js") do
         @jsrequire.on("view") do |action, params|
