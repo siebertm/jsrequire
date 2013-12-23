@@ -185,7 +185,7 @@ class JsRequire
 
   def extract_dependencies(filename)
     is_require = true
-    # dependencies = cache.fetch(["JsRequire", filename, File.mtime(filename).iso8601].join("/")) do
+    dependencies = cache.fetch(["JsRequire", filename, File.mtime(filename).iso8601].join("/")) do
       js = []
 
       File.open(filename, "r") do |fp|
@@ -204,7 +204,7 @@ class JsRequire
       end
 
       dependencies = js
-    # end
+    end
 
     dependencies.uniq.map { |f| find_file(f, File.dirname(filename)) }
   end
@@ -238,7 +238,12 @@ class JsRequire
       file = find_file(f)
 
       unless included_files.include?(file)
-        js += extract_dependencies_recursive(extract_dependencies(file), js + [file] + included_files)
+        dependencies = cache.fetch(["JsRequire", file, File.mtime(file).iso8601].join("/")) do
+          extract_dependencies_recursive(extract_dependencies(file), js + [file] + included_files)
+        end
+
+
+        js += dependencies
         js << file
       end
     end

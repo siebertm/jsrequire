@@ -7,7 +7,7 @@ describe "JsRequire hooks" do
   end
 
   def require(file, &block)
-    @jsrequire = JsRequire.new
+    @jsrequire = JsRequire.new(nil, ActiveSupport::Cache::MemoryStore.new)
 
     yield
 

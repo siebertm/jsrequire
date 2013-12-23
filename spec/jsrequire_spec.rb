@@ -8,7 +8,7 @@ describe "JsRequire" do
 
 
   def assert_requires(file, javascripts, stylesheets = [])
-    @jsrequire = JsRequire.new
+    @jsrequire = JsRequire.new(nil, ActiveSupport::Cache::MemoryStore.new)
     data = @jsrequire.resolve_dependencies(File.join(@fixtures_dir + "/javascripts", file))
 
     expect = [file, javascripts].flatten.map { |js| File.expand_path(js, @fixtures_dir + "/javascripts") }.sort
@@ -17,9 +17,8 @@ describe "JsRequire" do
   end
 
   describe "#resolve_dependencies" do
-
     it "return the basic hash with empty results" do
-      @jsrequire = JsRequire.new
+      @jsrequire = JsRequire.new(nil, ActiveSupport::Cache::MemoryStore.new)
       data = @jsrequire.resolve_dependencies([])
 
       assert !data.include?(:bernd)
@@ -35,7 +34,7 @@ describe "JsRequire" do
     it "require recursive dependencies" do
       file = File.join(@fixtures_dir, "javascripts/a.js")
 
-      @jsrequire = JsRequire.new File.join(@fixtures_dir, "different-place")
+      @jsrequire = JsRequire.new File.join(@fixtures_dir, "different-place"), ActiveSupport::Cache::MemoryStore.new
       data = @jsrequire.resolve_dependencies(file)
 
       expect = ["javascripts/norequire.js", "different-place/b.js", "javascripts/a.js"].map { |js| File.expand_path(js, @fixtures_dir) }
@@ -45,7 +44,7 @@ describe "JsRequire" do
     it "require recursive dependencies in right order" do
       files = ["different-place/b.js", "javascripts/c.js"].map { |f| File.join(@fixtures_dir, f) }
 
-      @jsrequire = JsRequire.new File.join(@fixtures_dir, "different-place")
+      @jsrequire = JsRequire.new File.join(@fixtures_dir, "different-place"), ActiveSupport::Cache::MemoryStore.new
       data = @jsrequire.resolve_dependencies(files)
 
       expect = ["javascripts/norequire.js", "different-place/b.js", "javascripts/a.js", "javascripts/c.js"].map { |js| File.expand_path(js, @fixtures_dir) }
@@ -58,7 +57,7 @@ describe "JsRequire" do
 
     it "resolve dependencies from loadpath with source file from different place" do
       loadpath = File.join(@fixtures_dir, "javascripts")
-      @jsrequire = JsRequire.new(loadpath)
+      @jsrequire = JsRequire.new(loadpath, ActiveSupport::Cache::MemoryStore.new)
 
       source_file = File.join(@fixtures_dir, "different-place/b.js")
       dep = @jsrequire.resolve_dependencies(source_file)
@@ -68,7 +67,7 @@ describe "JsRequire" do
     end
 
     it "not be able to resolve dependent files because of missing loadpath" do
-      @jsrequire = JsRequire.new
+      @jsrequire = JsRequire.new(nil, ActiveSupport::Cache::MemoryStore.new)
       source_file = File.join(@fixtures_dir, "different-place/b.js")
       required_file_found = true
 
@@ -107,7 +106,7 @@ describe "JsRequire" do
       additional_loadpath = File.join(@fixtures_dir, "different-place")
       extracted_loadpath = File.join(@fixtures_dir, "javascripts")
       files = ["norequire.js", "requirecss.js"].map { |f| File.join(extracted_loadpath, f) }
-      @jsrequire = JsRequire.new(additional_loadpath)
+      @jsrequire = JsRequire.new(additional_loadpath, ActiveSupport::Cache::MemoryStore.new)
       @jsrequire.resolve_dependencies(files)
 
       extracted_loadpaths = [File.expand_path(extracted_loadpath)]
@@ -120,16 +119,14 @@ describe "JsRequire" do
     it "work with CoffeeScript files, too" do
       assert_requires("i_can_cook.coffee", ["coffee/other.coffee", "coffee/tea.js", "coffee/coke.coffee"])
     end
-
   end
 
 
 
   describe "helper methods" do
-
     it "#web_path_helper" do
       loadpath = File.join(@fixtures_dir, "javascripts")
-      @jsrequire = JsRequire.new(loadpath)
+      @jsrequire = JsRequire.new(loadpath, ActiveSupport::Cache::MemoryStore.new)
 
       source_file = File.join(@fixtures_dir, "different-place/b.js")
       dep = @jsrequire.resolve_dependencies(source_file)
@@ -156,8 +153,6 @@ describe "JsRequire" do
 
       assert_equal ns, JsRequire::namespace_helper(js, "si")
     end
-
   end
-
 end
 
